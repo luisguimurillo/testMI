@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>Movable Ink</title>
+    <meta charset="UTF-8" />
+    <style>
+      .wrap {
+        width: 576px;
+        height: 166px;
+        margin: 0 auto;
+        position: relative;
+      }
+      .wrap .headline {
+        font-family: Arial, Helvetica, sans-serif;
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 24px;
+        width: 576px;
+        padding: 10px 0;
+        margin: 0px 0;
+        color: #7b7b7b;
+      }
+      .Forecast_Content {
+        width: 100%;
+        padding-top: 13px;
+      }
+      .Fc {
+        width: 172px;
+        display: inline-block;
+        margin: 0px 7px;
+      }
+      .Fc .Subheadline {
+        background: #6b9cbd;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #ffffff;
+        text-transform: none;
+        font-size: 15px;
+        padding: 5px 10px;
+        text-align: left;
+        margin: 0px;
+        font-weight: bold;
+      }
+      .contenedor {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .icon {
+        width: 40%;
+        padding-top: 12px;
+      }
+      .sidebar {
+        width: 60%;
+        padding-top: 10px;
+        line-height: 25px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        color: #5a4a4a;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="zipcode-form">
+      <input type="text" id="zipcode-input" placeholder="Enter ZIP code" />
+      <input type="date" id="date-input" />
+      <button onclick="getForecast()">Get Forecast</button>
+    </div>
+    <div class="wrap">
+      <div class="headline"></div>
+      <div class="Forecast_Content"></div>
+    </div>
+  </body>
+
+  <script>
+    function getForecast() {
+      const date = document.getElementById("date-input").value;
+      const zipCode = document.getElementById("zipcode-input").value;
+      const formattedDate = formatDate(date);
+      const today = new Date();
+
+      const url =
+        "https://se-weather-api.herokuapp.com/api/v1/geo?zip_code=" + zipCode;
+      // console.log("url", url);
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          let latitude = data.latitude;
+          let longitude = data.longitude;
+          let city = data.city;
+          //console.log(city);
+          //console.log(longitude);
+
+          document.getElementsByClassName(
+            "headline"
+          )[0].textContent = `Weather ferecast for ${city}`;
+
+          fetch(
+            "https://se-weather-api.herokuapp.com/api/v1/forecast?latitude=" +
+              latitude +
+              "&longitude=" +
+              longitude +
+              "&date=" +
+              formattedDate
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              const forecastData = data.daily.data.slice(0, 3);
+              const forecastContent =
+                document.querySelector(".Forecast_Content");
+
+              forecastData.forEach((forecast) => {
+                const fcElement = document.createElement("div");
+                fcElement.classList.add("Fc");
+                const subheadlineElement = document.createElement("div");
+                const time = new Date(forecast.time * 1000).toLocaleString(
+                  "en-us",
+                  { weekday: "long" }
+                );
+                //console.log("weekday", time);
+                subheadlineElement.classList.add("Subheadline");
+                subheadlineElement.textContent = time;
+
+                fcElement.appendChild(subheadlineElement);
+
+                const contenedorElement = document.createElement("div");
+                contenedorElement.classList.add("contenedor");
+
+                const iconElement = document.createElement("div");
+                iconElement.classList.add("icon");
+                const iconImgElement = document.createElement("img");
+                iconImgElement.src = `img/${forecast.icon}.png`;
+                iconImgElement.style.width = "60px";
+                iconElement.appendChild(iconImgElement);
+                contenedorElement.appendChild(iconElement);
+
+                const sidebarElement = document.createElement("div");
+                const hightTemp = forecast.temperatureHigh.toFixed(0);
+                const lowTemp = forecast.temperatureLow.toFixed(0);
+                //console.log("High Temp", hightTemp);
+                sidebarElement.classList.add("sidebar");
+                sidebarElement.innerHTML = `${forecast.icon}<br /><strong>${hightTemp}°</strong> / ${lowTemp}° F`;
+                contenedorElement.appendChild(sidebarElement);
+
+                fcElement.appendChild(contenedorElement);
+
+                forecastContent.appendChild(fcElement);
+              });
+            });
+        })
+        .catch((error) => {
+          console.log("Error:", error);
+        });
+    }
+    function formatDate(date) {
+      var parts = date.split("-");
+      return parts[1] + "/" + parts[2] + "/" + parts[0];
+    }
+  </script>
+</html>
